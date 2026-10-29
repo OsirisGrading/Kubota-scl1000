@@ -1,7 +1,5 @@
 # Kubota-scl1000
 Kubota rental agreement
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
