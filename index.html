@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kubota SCL1000 Rental Portal & Agreement</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        kubota: '#F36C21',
+                        kubotadark: '#D4530C',
+                        charcoal: '#222222',
+                        darkgray: '#333333'
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .calendar-day {
+            min-height: 2.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .calendar-day:hover {
+            border-color: #f36c21;
+        }
+        .calendar-day.disabled {
+            background-color: #fee2e2;
+            color: #ef4444;
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
+        .calendar-day.selected {
+            background-color: #F36C21;
+            color: white;
+            font-weight: bold;
+        }
+        .calendar-day.outside-month {
+            opacity: 0.38;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white; color: black; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans text-gray-800 min-h-screen">
+    <header class="bg-charcoal text-white border-b-4 border-kubota shadow-md sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-kubota text-white p-2 rounded-lg font-black text-xl tracking-wider">KUBOTA</div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">SCL1000 Equipment Rental</h1>
+                    <p class="text-xs text-gray-400">Official Portal & Digital E-Sign Contract</p>
+                </div>
+            </div>
+            <a href="tel:+15550000000" class="no-print bg-darkgray hover:bg-gray-700 text-xs px-3 py-2 rounded text-gray-200 flex items-center gap-2 border border-gray-600">
+                <i class="fa-solid fa-phone text-kubota"></i> Contact Owner
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6 flex flex-col md:flex-row">
+            <div class="bg-charcoal text-white p-6 md:w-1/3 flex flex-col justify-between relative overflow-hidden">
+                <div class="z-10">
+                    <span class="bg-kubota text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">Stand-On CTL</span>
+                    <h2 class="text-2xl font-black mt-2">Kubota SCL1000</h2>
+                    <p class="text-xs text-gray-400 mt-1">Compact Track Loader</p>
+                </div>
+                <div class="my-4 z-10 space-y-2 text-xs">
+                    <div class="flex justify-between border-b border-gray-700 pb-1">
+                        <span class="text-gray-400">Rated Operating Cap:</span>
+                        <span class="font-bold text-white">1,000 lbs</span>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-700 pb-1">
+                        <span class="text-gray-400">Operating Weight:</span>
+                        <span class="font-bold text-white">3,035 lbs</span>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-700 pb-1">
+                        <span class="text-gray-400">Engine Fuel:</span>
+                        <span class="font-bold text-kubota">Ultra-Low Sulfur Diesel Only</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">DEF Fluid Required?</span>
+                        <span class="font-bold text-green-400">NO DEF REQUIRED</span>
+                    </div>
+                </div>
+                <div class="text-[10px] text-gray-500 z-10">Keyless Start Password Provided at Handover</div>
+            </div>
+
+            <div class="p-6 md:w-2/3 flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-gray-900 flex items-center gap-2">
+                            <i class="fa-solid fa-calendar-days text-kubota"></i> Real-Time Availability Calendar
+                        </h3>
+                        <span id="firebaseStatus" class="text-[11px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Live Sync Active</span>
+                    </div>
+
+                    <div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg border border-gray-200 mb-2 text-sm font-bold">
+                        <button id="prevMonth" type="button" class="px-2 py-1 text-gray-600 hover:text-black">&lt;</button>
+                        <span id="calendarMonthYear">Current Month</span>
+                        <button id="nextMonth" type="button" class="px-2 py-1 text-gray-600 hover:text-black">&gt;</button>
+                    </div>
+
+                    <div class="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-gray-500 mb-1">
+                        <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+                    </div>
+                    <div id="calendarDays" class="grid grid-cols-7 gap-1 text-center text-xs"></div>
+
+                    <div class="flex items-center justify-end gap-4 mt-3 text-[11px] text-gray-500">
+                        <div class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-white border border-gray-300 inline-block rounded-sm"></span> Available</div>
+                        <div class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-red-200 border border-red-400 inline-block rounded-sm"></span> Booked / Rented</div>
+                        <div class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-kubota inline-block rounded-sm"></span> Selected</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <form id="rentalForm" class="space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h3 class="text-base font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200 flex items-center gap-2">
+                    <span class="bg-kubota text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs">1</span>
+                    Renter / Lessee Details
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Full Legal Name *</label>
+                        <input type="text" id="renterName" required class="w-full p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-kubota outline-none" placeholder="First and Last Name">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Phone Number *</label>
+                        <input type="tel" id="renterPhone" required class="w-full p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-kubota outline-none" placeholder="(555) 000-0000">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Driver's License # & State *</label>
+                        <input type="text" id="renterDL" required class="w-full p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-kubota outline-none" placeholder="e.g. DL12345678 - CA">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Billing / Home Address *</label>
+                        <input type="text" id="renterAddress" required class="w-full p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-kubota outline-none" placeholder="Street, City, State, Zip">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h3 class="text-base font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200 flex items-center gap-2">
+                    <span class="bg-kubota text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs">2</span>
+                    Rental Terms & Machine Setup
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Start Date *</label>
+                        <input type="date" id="startDate" required class="w-full p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-kubota outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Return Date *</label>
+                        <input type="date" id="endDate" required class="w-full p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-kubota outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Starting Engine Hours *</label>
+                        <input type="number" step="0.1" id="startHours" required class="w-full p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-kubota outline-none" placeholder="From SCL1000 Screen">
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <label class="block text-xs font-bold text-gray-700 mb-2">Attachments Included:</label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                        <label class="flex items-center gap-2 p-2 bg-gray-50 border rounded-lg cursor-pointer">
+                            <input type="checkbox" name="attachments" value="Standard Smooth Bucket" checked class="accent-kubota"> Smooth Bucket
+                        </label>
+                        <label class="flex items-center gap-2 p-2 bg-gray-50 border rounded-lg cursor-pointer">
+                            <input type="checkbox" name="attachments" value="Pallet Forks" class="accent-kubota"> Pallet Forks
+                        </label>
+                        <label class="flex items-center gap-2 p-2 bg-gray-50 border rounded-lg cursor-pointer">
+                            <input type="checkbox" name="attachments" value="Post Hole Auger" class="accent-kubota"> Auger Attachment
+                        </label>
+                        <label class="flex items-center gap-2 p-2 bg-gray-50 border rounded-lg cursor-pointer">
+                            <input type="checkbox" name="attachments" value="Trencher" class="accent-kubota"> Trencher
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h3 class="text-base font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200 flex items-center gap-2">
+                    <span class="bg-kubota text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs">3</span>
+                    Pre-Rental Inspection & Fluid Acknowledgment
+                </h3>
+                <div class="space-y-3 text-xs">
+                    <label class="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg cursor-pointer">
+                        <input type="checkbox" required class="mt-0.5 accent-kubota">
+                        <div>
+                            <span class="font-bold text-amber-900">Ultra-Low Sulfur Diesel Only (NO DEF REQUIRED)</span>
+                            <p class="text-amber-800">I acknowledge this Kubota SCL1000 runs strictly on clean Ultra-Low Sulfur Diesel. Putting gasoline, contaminated fuel, or DEF into the fuel tank will cause engine destruction, and I will be 100% financially liable for all flush, repair, and replacement costs.</p>
+                        </div>
+                    </label>
+
+                    <label class="flex items-start gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer">
+                        <input type="checkbox" required class="mt-0.5 accent-kubota">
+                        <div>
+                            <span class="font-bold text-gray-900">Fuel Level Return Obligation</span>
+                            <p class="text-gray-600">The machine is provided with a FULL tank (7.75 Gallons). I agree to return it fully topped off with Diesel. If returned with less fuel, I authorize a refueling fee of $10.00 per missing gallon.</p>
+                        </div>
+                    </label>
+
+                    <label class="flex items-start gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer">
+                        <input type="checkbox" required class="mt-0.5 accent-kubota">
+                        <div>
+                            <span class="font-bold text-gray-900">Rubber Tracks & Undercarriage Condition</span>
+                            <p class="text-gray-600">I have inspected the rubber tracks and confirm there are no existing tears, cuts, or thrown tracks. I accept full liability for track damage caused by sharp debris, rebar, jagged concrete, or misuse during my rental period.</p>
+                        </div>
+                    </label>
+
+                    <label class="flex items-start gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer">
+                        <input type="checkbox" required class="mt-0.5 accent-kubota">
+                        <div>
+                            <span class="font-bold text-gray-900">Cleaning Fee Policy</span>
+                            <p class="text-gray-600">Equipment must be returned reasonably clean and free of excessive mud, wet concrete, asphalt, or chemical buildup. A minimum $150 cleaning fee will apply if detailing or washing is required upon return.</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h3 class="text-base font-bold text-gray-900 mb-2 flex items-center gap-2">
+                    <span class="bg-kubota text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs">4</span>
+                    Equipment Rental Terms & Liability Agreement
+                </h3>
+                <p class="text-xs text-gray-500 mb-3">Please read the agreement below before providing your digital signature.</p>
+
+                <div class="h-48 overflow-y-scroll p-4 bg-gray-50 border border-gray-200 rounded-lg text-xs leading-relaxed text-gray-700 space-y-3">
+                    <p class="font-bold uppercase text-gray-900 border-b pb-1">KUBOTA SCL1000 RENTAL AGREEMENT TERMS</p>
+                    <p><strong>1. FULL FINANCIAL RESPONSIBILITY:</strong> Renter assumes 100% financial liability for all damages, loss, theft, vandalism, fire, or breakdown resulting from improper operation, abuse, or negligence during the rental period. Renter is fully responsible for certified mechanics, OEM repair parts, and labor costs incurred.</p>
+                    <p><strong>2. OPERATOR QUALIFICATIONS & LIMITATIONS:</strong> Only trained, competent, adult operators (18+) named in this contract are authorized to operate the Kubota SCL1000. Subleasing or loaning the machine to third parties is strictly prohibited. Maximum Rated Operating Capacity (ROC) is 1,000 lbs. Overloading beyond tipping limits is unsafe and prohibited.</p>
+                    <p><strong>3. HOURLY ALLOWANCE & OVERTIME:</strong> Daily rental includes up to 8 engine operating hours per 24-hour cycle. Any excess hours recorded on the digital hour meter upon return will be charged at $25.00 per excess engine hour.</p>
+                    <p><strong>4. INDEMNIFICATION & RELEASE OF LIABILITY:</strong> Renter releases Lessor/Owner from all liability regarding personal injury, death, third-party property damage, downtime, or job delays arising from equipment transport, operation, or attachment use. Renter agrees to defend and hold harmless the Owner from any legal claims.</p>
+                    <p><strong>5. REPOSSESSION RIGHTS:</strong> If Renter fails to return the equipment at the agreed date/time or defaults on rental terms, Owner reserves the right to immediately enter Renter's property/jobsite and repossess the machine using installed GPS tracking, without prior notice or court order.</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h3 class="text-base font-bold text-gray-900 mb-2 flex items-center gap-2">
+                    <span class="bg-kubota text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs">5</span>
+                    Digital E-Signature
+                </h3>
+                <p class="text-xs text-gray-500 mb-3">Draw your signature below using your finger, stylus, or mouse to execute this binding rental agreement.</p>
+
+                <div class="border-2 border-dashed border-gray-300 rounded-xl p-2 bg-gray-50 relative">
+                    <canvas id="sigCanvas" width="700" height="180" class="w-full h-44 touch-none cursor-crosshair rounded-lg bg-white"></canvas>
+                    <div id="sigPlaceholder" class="absolute inset-0 flex items-center justify-center pointer-events-none text-gray-400 text-sm italic">
+                        Sign Here with Finger or Mouse
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center mt-3">
+                    <button type="button" id="clearSig" class="text-xs text-red-600 hover:text-red-800 font-semibold flex items-center gap-1 px-3 py-1.5 rounded border border-red-200 hover:bg-red-50">
+                        <i class="fa-solid fa-eraser"></i> Clear Signature
+                    </button>
+                    <span class="text-[11px] text-gray-400">Timestamped upon submission</span>
+                </div>
+            </div>
+
+            <div class="no-print">
+                <button type="submit" id="submitBtn" class="w-full bg-kubota hover:bg-kubotadark text-white font-black text-base py-4 rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-file-signature"></i> SUBMIT & LOCK RENTAL AGREEMENT
+                </button>
+                <p class="text-center text-[11px] text-gray-500 mt-2">By submitting, you agree to the full equipment rental terms and acknowledge acceptance of all liability conditions referenced above.</p>
+            </div>
+        </form>
+    </main>
+
+    <script>
+        const calendarDays = document.getElementById('calendarDays');
+        const monthLabel = document.getElementById('calendarMonthYear');
+        const prevMonthBtn = document.getElementById('prevMonth');
+        const nextMonthBtn = document.getElementById('nextMonth');
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        const form = document.getElementById('rentalForm');
+
+        let currentViewDate = new Date();
+        let selectedDates = [];
+
+        function renderCalendar() {
+            const year = currentViewDate.getFullYear();
+            const month = currentViewDate.getMonth();
+            const firstOfMonth = new Date(year, month, 1);
+            const lastOfMonth = new Date(year, month + 1, 0);
+            const startingDay = firstOfMonth.getDay();
+            const totalDays = lastOfMonth.getDate();
+
+            monthLabel.textContent = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(currentViewDate);
+            calendarDays.innerHTML = '';
+
+            const prevMonthLastDay = new Date(year, month, 0).getDate();
+            const cellsToRender = 42;
+
+            for (let i = 0; i < cellsToRender; i++) {
+                const dayNumber = i - startingDay + 1;
+                const date = new Date(year, month, dayNumber);
+                const dayButton = document.createElement('button');
+                dayButton.type = 'button';
+                dayButton.className = 'calendar-day';
+                dayButton.textContent = date.getDate();
+
+                const isCurrentMonth = date.getMonth() === month;
+                if (!isCurrentMonth) {
+                    dayButton.classList.add('outside-month');
+                    dayButton.disabled = true;
+                    dayButton.title = 'Outside current month';
+                } else {
+                    const isBooked = ((date.getDate() + month) % 5 === 0) || ((date.getDate() + month) % 7 === 0);
+                    if (isBooked) {
+                        dayButton.classList.add('disabled');
+                        dayButton.disabled = true;
+                    }
+                    if (selectedDates.some(d => d.toDateString() === date.toDateString())) {
+                        dayButton.classList.add('selected');
+                    }
+                    dayButton.addEventListener('click', () => {
+                        if (dayButton.disabled) return;
+                        const existingIndex = selectedDates.findIndex(d => d.toDateString() === date.toDateString());
+                        if (existingIndex >= 0) {
+                            selectedDates.splice(existingIndex, 1);
+                        } else {
+                            selectedDates.push(new Date(date.getFullYear(), date.getMonth(), date.getDate()));
+                        }
+                        if (selectedDates.length > 0) {
+                            const sorted = [...selectedDates].sort((a, b) => a - b);
+                            startDateInput.value = formatInputDate(sorted[0]);
+                            endDateInput.value = formatInputDate(sorted[sorted.length - 1]);
+                        }
+                        renderCalendar();
+                    });
+                }
+
+                if (!isCurrentMonth && date.getDate() <= 7 && i < startingDay) {
+                    dayButton.textContent = prevMonthLastDay - startingDay + i + 1;
+                } else if (!isCurrentMonth) {
+                    dayButton.textContent = date.getDate();
+                }
+
+                calendarDays.appendChild(dayButton);
+            }
+        }
+
+        function formatInputDate(date) {
+            const pad = (value) => String(value).padStart(2, '0');
+            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+        }
+
+        prevMonthBtn.addEventListener('click', () => {
+            currentViewDate = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth() - 1, 1);
+            renderCalendar();
+        });
+
+        nextMonthBtn.addEventListener('click', () => {
+            currentViewDate = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth() + 1, 1);
+            renderCalendar();
+        });
+
+        const canvas = document.getElementById('sigCanvas');
+        const signaturePad = canvas.getContext('2d');
+        const sigPlaceholder = document.getElementById('sigPlaceholder');
+        const clearSigBtn = document.getElementById('clearSig');
+
+        let isDrawing = false;
+
+        function resizeCanvas() {
+            const ratio = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * ratio;
+            canvas.height = rect.height * ratio;
+            signaturePad.setTransform(ratio, 0, 0, ratio, 0, 0);
+            signaturePad.lineWidth = 2.5;
+            signaturePad.lineCap = 'round';
+            signaturePad.lineJoin = 'round';
+            signaturePad.strokeStyle = '#111827';
+        }
+
+        function getRelativePosition(event) {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            return { x, y };
+        }
+
+        canvas.addEventListener('pointerdown', (event) => {
+            isDrawing = true;
+            sigPlaceholder.style.display = 'none';
+            const pos = getRelativePosition(event);
+            signaturePad.beginPath();
+            signaturePad.moveTo(pos.x, pos.y);
+            signaturePad.lineTo(pos.x, pos.y);
+            signaturePad.stroke();
+        });
+
+        canvas.addEventListener('pointermove', (event) => {
+            if (!isDrawing) return;
+            const pos = getRelativePosition(event);
+            signaturePad.lineTo(pos.x, pos.y);
+            signaturePad.stroke();
+        });
+
+        canvas.addEventListener('pointerup', () => {
+            isDrawing = false;
+            signaturePad.beginPath();
+        });
+
+        canvas.addEventListener('pointerleave', () => {
+            isDrawing = false;
+            signaturePad.beginPath();
+        });
+
+        clearSigBtn.addEventListener('click', () => {
+            signaturePad.clearRect(0, 0, canvas.width, canvas.height);
+            sigPlaceholder.style.display = 'flex';
+        });
+
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            const name = document.getElementById('renterName').value.trim();
+            const phone = document.getElementById('renterPhone').value.trim();
+            const dl = document.getElementById('renterDL').value.trim();
+            const address = document.getElementById('renterAddress').value.trim();
+
+            if (!name || !phone || !dl || !address) {
+                alert('Please complete all renter details before submitting.');
+                return;
+            }
+
+            const dateValue = startDateInput.value && endDateInput.value ? `From ${startDateInput.value} to ${endDateInput.value}` : 'No dates selected';
+            alert(`Rental Agreement Submitted Successfully\n\nRenter: ${name}\nPhone: ${phone}\nLicense: ${dl}\n${dateValue}`);
+            form.reset();
+            clearSigBtn.click();
+            renderCalendar();
+        });
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        renderCalendar();
+    </script>
+</body>
+</html>
